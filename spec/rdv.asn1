@@ -1,0 +1,272 @@
+ModuloRegistroDigitalVoto DEFINITIONS IMPLICIT TAGS ::= BEGIN
+
+EXPORTS ALL;
+
+-- TIPOS
+CodigoMunicipio ::= INTEGER (1..99999)          -- Código do município fornecido pelo cadastro da Justiça Eleitoral.
+DataHoraJE ::= GeneralString(SIZE(15))          -- Data e hora utilizada pela Justiça Eleitoral no formato YYYYMMDDThhmmss.
+IDEleicao ::= INTEGER (0..99999)                -- Código numérico identificador da <glossario id='eleicao'>eleição</glossario> (Atribuído pelo Sistema Configurador de Eleições).
+IDPleito ::= INTEGER (0..99999)                 -- Código numérico identificador do <glossario id='pleito'>pleito</glossario> (Atribuído pelo Sistema Configurador de Eleições).
+IDProcessoEleitoral ::= INTEGER (0..99999)      -- Código numérico identificador do <glossario id='processo-eleitoral'>processo eleitoral</glossario> (Atribuído pelo Sistema Configurador de Eleções).
+NumeroCargoConsultaLivre ::= INTEGER (25..99)   -- Número livre de cargo ou consulta definido no cadastramento da <glossario id='eleicao'>eleição</glossario>.
+NumeroInternoUrna ::= INTEGER (0..99999999)     -- Número interno da urna eletrônica.
+NumeroLocal ::= INTEGER (1..9999)               -- Número do local de votação da <glossario id='secao-eleitoral'>seção eleitoral</glossario> de acordo com o cadastro da Justiça Eleitoral.
+NumeroSecao ::= INTEGER (1..9999)               -- Número da <glossario id='secao-eleitoral'>seçõe eleitoral</glossario> de acordo com o cadastro da Justiça Eleitoral.
+NumeroSerieFlash ::= OCTET STRING (SIZE(4))     -- Número de série da Flash (Representa um número de 4 bytes (0..2^32-1)).
+NumeroZona ::= INTEGER (1..9999)                -- Número da <glossario id='zona-eleitoral'>zona eleitoral</glossario> fornecido pelo cadastro da Justiça Eleitoral.
+QuantidadeEscolhas ::= INTEGER (1..50)          -- Quantidade máxima de escolhas para um mesmo cargo.
+VotoDigitado ::= NumericString (SIZE(1..5))     -- Digitação como feita pelo eleitor na urna.
+
+-- ENUMS
+-- Tipos de cargos eletivos previstos na constituição.
+CargoConstitucional ::= ENUMERATED {
+    presidente              (1),
+    vicePresidente          (2),
+    governador              (3),
+    viceGovernador          (4),
+    senador                 (5),
+    deputadoFederal         (6),
+    deputadoEstadual        (7),
+    deputadoDistrital       (8),
+    primeiroSuplenteSenador (9),
+    segundoSuplenteSenador  (10),
+    prefeito                (11),
+    vicePrefeito            (12),
+    vereador                (13)
+}
+
+-- Tipos de fase em que foi gerado os pacotes.
+Fase ::= ENUMERATED {
+    simulado    (1),    -- Se os arquivos foram gerados durante o simulado.
+    oficial     (2),    -- Se os arquivos foram gerados com resultados reais da eleição.
+    treinamento (3)     -- Se os arquivos foram gerados durante a fase de treinamento dos sistemas.
+}
+
+MotivoApuracaoEletronica ::= ENUMERATED {
+    naoFoiPossivelReuperarResultado (1),
+    urnaNaoChegouMidiaDefeituosa    (2),
+    urnaNaoChegouMidiaExtraviada    (3),
+    outros                          (99)
+}
+
+MotivoApuracaoManual ::= ENUMERATED {
+    urnaComDefeito          (1),
+    urnaIndisponivelInicio  (2),
+    urnaOutraSecao          (3),
+    outros                  (99)
+}
+
+MotivoApuracaoMistaComBU ::= ENUMERATED {
+    urnaDataHoraIncorreta       (1),
+    urnaComDefeito              (2),
+    urnaOutrasecao              (3),
+    urnaPreparadaIncorretamente (4),
+    urnaChegouAposInicioVotacao (5),
+    outros                      (99)
+}
+
+MotivoApuracaoMistaComMR ::= ENUMERATED {
+    naoObteveExitoContingencia          (1),
+    indisponibilidadeUrnaContingencia   (2),
+    indisponibilidadeFlashContingencia  (3),
+    problemaEnergiaEletrica             (4),
+    naoFoiPossivelTrocarUrna            (5),
+    naoFoiSolicitadaTrocaUrna           (6),
+    outros                              (99)
+}
+
+-- Origem dos votos inseridos no SA.
+OrigemVotosSA ::= ENUMERATED {
+    cedula(1),
+    rdv(2),
+    bu(3)
+}
+
+TipoApuracao ::= ENUMERATED {
+    totalmenteManual        (1),
+    totalmenteEletronica    (2),
+    mistaBU                 (3),
+    mistaMR                 (4)
+}
+
+-- Tipos de arquivos de votação.
+TipoArquivo ::= ENUMERATED {
+    votacaoUE               (1), -- Urna eletrônica.
+    votacaoRED              (2), -- RED (Recuperador de Dados - Responsável por gerar uma nova memória de resultado a partir da urna originária).
+    saMistaMRParcialCedula  (3), -- <glossario id='sistema-de-apuracao'>Sistema de Apuração</glossario> (Votação Mista - Memória de Resultado e Cédulas).
+    saMistaBUImpressoCedula (4), -- <glossario id='sistema-de-apuracao'>Sistema de Apuração</glossario> (Votação Mista - <glossario id='boletim-de-urna'>BU</glossario> impresso e Cédulas).
+    saManual                (5), -- <glossario id='sistema-de-apuracao'>Sistema de Apuração</glossario> (Votação totalmente manual - Cédulas).
+    saEletronica            (6)  -- <glossario id='sistema-de-apuracao'>Sistema de Apuração</glossario> (Votação totalmente eletrônica).
+}
+
+-- Tipo do sistema eleitoral.
+TipoCedulaSA ::= ENUMERATED {
+    majoritario(1),
+    proporcional(2)
+}
+
+-- Tipos de urna eletrônica.
+TipoUrna ::= ENUMERATED {
+    secao                   (1), -- Urna de seção.
+    contingencia            (3), -- <glossario id='urna-de-contingencia'>Urna de contingência</glossario>.
+    reservaSecao            (4), -- Resultado de urna de contingência que passou a ser de seção.
+    reservaEncerrandoSecao  (6)  -- Barriga de aluguel para seção (Procedimento de recuperação dos dados de uma urna de seção, a partir da inserção de seu cartão de memória externo em uma <glossario id='urna-de-contingencia'>urna de contingência</glossario>).
+}
+
+-- Tipos de voto.
+TipoVoto ::= ENUMERATED {
+    legenda(1),
+    nominal(2),
+    branco(3),
+    nulo(4),
+    brancoAposSuspensao(5),
+    nuloAposSuspensao(6),
+    nuloPorRepeticao(7),
+    nuloCargoSemCandidato(8),
+    nuloAposSuspensaoCargoSemCandidato(9)
+}
+
+-- SEQUENCES e CHOICES
+-- Entidade usada para a geração do RDV na memória de resultado.
+EntidadeResultadoRDV ::= SEQUENCE {
+    cabecalho   CabecalhoEntidade,          -- Informações do cabeçalho da entidade.
+    urna        Urna,                       -- Informações da urna eletrônica.
+    rdv         EntidadeRegistroDigitalVoto -- Registro digital do voto.
+}
+
+-- Entidade usada para o armazenamento do RDV nas mídias interna e externa da urna.
+EntidadeRegistroDigitalVoto ::= SEQUENCE {
+    pleito          IDPleito,                       -- Identificador do pleito corrente.
+    fase            Fase,                           -- Fase em que foi gerado o arquivo.
+    identificacao   IdentificacaoSecaoEleitoral,    -- Identificação da seção eleitoral.
+    eleicoes        Eleicoes                        -- Grupo de votos de todas as eleições.
+}
+
+ApuracaoEletronica ::= SEQUENCE {
+    tipoapuracao    TipoApuracao,
+    motivoApuracao  MotivoApuracaoEletronica
+}
+
+ApuracaoMistaBUAE ::= SEQUENCE {
+    tipoapuracao    TipoApuracao,
+    motivoApuracao  MotivoApuracaoMistaComBU
+}
+
+ApuracaoMistaMR ::= SEQUENCE {
+    tipoApuracao    TipoApuracao,
+    motivoApuracao  MotivoApuracaoMistaComMR
+}
+
+ApuracaoTotalmenteManualDigitacaoAE ::= SEQUENCE {
+    tipoapuracao    TipoApuracao,
+    motivoApuracao  MotivoApuracaoManual
+}
+
+-- Identificador que contém informações do cabeçalho da entidade (Arquivos ASN.1).
+CabecalhoEntidade ::= SEQUENCE {
+    dataGeracao DataHoraJE, -- Data da geração da entidade.
+    idEleitoral IDEleitoral -- Identificador Eleitoral (<glossario id='processo'>Processo</glossario>, <glossario id='pleito'>pleito</glossario> ou <glossario id='eleicao'>eleição</glossario>).
+}
+
+-- Identificador com informações da carga da urna eletrônica.
+Carga ::= SEQUENCE {
+    numeroInternoUrna   NumeroInternoUrna,  -- Número interno da urna eletrônica.
+    numeroSerieFC       NumeroSerieFlash,   -- Número de série da unidade de Flash Card.
+    dataHoraCarga       DataHoraJE,         -- Data e hora da carga no formato utilizado pela Justiça Eleitoral (YYYYMMDDThhmmss).
+    codigoCarga         GeneralString       -- Código da carga da urna eletrônica.
+}
+
+-- Identificador para escolha de Número de cargo constitucional ou Número cargo/consulta livre.
+CodigoCargoConsulta ::= CHOICE {
+    cargoConstitucional         [1] CargoConstitucional,        -- Cargos constitucionais (São dos cargos previstos na constituição).
+    numeroCargoConsultaLivre    [2] NumeroCargoConsultaLivre    -- Código das consultas definido durante o cadastramento da Eleção.
+}
+
+-- Identificador com informações da urna e da carga.
+CorrespondenciaResultado ::= SEQUENCE {
+    identificacao   IdentificacaoUrna,  -- Identificação se  tem carga de seção ou de mesa receptora de justificativa.
+    carga           Carga               -- Informações da carga da urna eletrônica.
+}
+
+-- Votos para todos os cargos de uma eleição.
+EleicaoVota ::= SEQUENCE {
+    idEleicao   IDEleicao,                      -- Identificador da eleição.
+    votosCargos SEQUENCE OF VotosCargo          -- Grupo de cédulas da eleição.
+}
+
+-- Votos para todos os cargos de uma eleição.
+EleicaoSA ::= SEQUENCE {
+    idEleicao       IDEleicao,                  -- Identificador da eleição.
+    tipoCedulaSA    TipoCedulaSA,               -- Tipo da cédula de papel apurada pelo SA.
+    origemVotosSA   OrigemVotosSA,              -- A origem dos votos inseridos no SA.
+    votosCargos     SEQUENCE OF VotosCargo      -- Grupo de cédulas da eleição.
+}
+
+Eleicoes ::= CHOICE {
+    eleicoesVota    [0] SEQUENCE OF EleicaoVota,    -- Grupo de votos de todas as eleições do Vota.
+    eleicoesSA      [1] SEQUENCE OF EleicaoSA       -- Grupo de votos de todas as eleições do SA.
+}
+
+-- Tipos de identificadores eleitorais (Se o pacote é gerado por (<glossario id='processo'>processo</glossario>, <glossario id='pleito'>pleito</glossario> ou <glossario id='eleicao'>eleição</glossario>).
+IDEleitoral ::= CHOICE {
+    idProcessoEleitoral [1] IDProcessoEleitoral,    -- Identificador do <glossario id='processo-eleitoral'>processo eleitoral</glossario>.
+    idPleito            [2] IDPleito,               -- Identificador do <glossario id='pleito'>pleito</glossario>.
+    idEleicao           [3] IDEleicao               -- Identificador da <glossario id='eleicao'>eleição</glossario>.
+}
+
+-- Identificador com informações de <glossario id='contingencia'>contingência</glossario>.
+IdentificacaoContingencia ::= SEQUENCE {
+    municipioZona MunicipioZona -- Número do município e Número da <glossario id='zona-eleitoral'>zona eleitoral</glossario> a qual pertence a urna.
+}
+
+-- Identificador com informações da <glossario id='secao-eleitoral'>seção eleitoral</glossario>.
+IdentificacaoSecaoEleitoral ::= SEQUENCE {
+    municipioZona   MunicipioZona,  -- Número do município e Número da <glossario id='zona-eleitoral'>zona eleitoral</glossario> a qual pertence a <glossario id='secao-eleitoral'>seção eleitoral</glossario>.
+    local           NumeroLocal,    -- Número do local de votação da seção eleitoral.
+    secao           NumeroSecao     -- Número identificador da <glossario id='secao-eleitoral'>seção eleitoral</glossario>.
+}
+
+-- Identificação da Urna (Se é de seção eleitoral ou de Mesa Receptora de Justificativa).
+IdentificacaoUrna ::= CHOICE {
+    identificacaoSecaoEleitoral    [0] IdentificacaoSecaoEleitoral,     -- Urna de seção eleitoral.
+    identificacaoContingencia      [1] IdentificacaoContingencia        -- Urna de contingência.
+}
+
+-- Identificador que contém informações de município e <glossario id='zona eleitoral'>zona eleitoral</glossario> que são relacionados entre si.
+MunicipioZona ::= SEQUENCE {
+    municipio   CodigoMunicipio,    -- Código do município de acordo com o cadastro da Justiça Eleitoral.
+    zona        NumeroZona          -- Número da <glossario id='zona eleitoral'>zona eleitoral</glossario> de acordo com o cadastro da Justiça Eleitoral.
+}
+
+TipoApuracaoSA ::= CHOICE {
+    apuracaoMistaMR             [0] ApuracaoMistaMR,
+    apuracaoMistaBUAE           [1] ApuracaoMistaBUAE,
+    apuracaoTotalmenteManual    [2] ApuracaoTotalmenteManualDigitacaoAE,
+    apuracaoEletronica          [3] ApuracaoEletronica
+}
+
+-- Identificador com informações da urna eletrônica.
+Urna ::= SEQUENCE {
+    tipoUrna                 TipoUrna,                      -- Tipo da urna eletrônica.
+    versaoVotacao            GeneralString,                 -- Versão do software de votação da urna eletrônica.
+    correspondenciaResultado CorrespondenciaResultado,      -- Informações da <glossario id='correspondencia'>correspondência</glossario> da urna eletrônica.
+    tipoArquivo              TipoArquivo,                   -- Tipo do arquivo gerado pela urna eletrônica.
+    numeroSerieFV            NumeroSerieFlash,              -- Número de série da Flash de Votação.
+    motivoUtilizacaoSA       TipoApuracaoSA OPTIONAL        -- Identificador numérico para o motivo de utilização do <glossario id='sistema-de-apuracao'>Sistema de Apuração</glossario> para a urna eletrônica.
+                                                            -- (UE: não utilizado(0); SA: código de justificativa de uso).
+}
+
+-- Votos de um eleitor para todas as escolhas de um cargo.
+Voto ::= SEQUENCE {
+    tipoVoto    TipoVoto,                       -- Tipo do voto registrado.
+    digitacao   VotoDigitado OPTIONAL           -- Número como digitado pelo eleitor (não existe para TipoVoto = 3, 5, 6, 8 e 9).
+}
+
+-- Todos os votos para um cargo específico.
+VotosCargo ::= SEQUENCE {
+    idCargo             CodigoCargoConsulta,    -- Código do cargo votado.
+    quantidadeEscolhas  QuantidadeEscolhas,     -- Quantidade de escolhas para o cargo.
+    votos               SEQUENCE OF Voto        -- Votos do cargo.
+}
+
+END
