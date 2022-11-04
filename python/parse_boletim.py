@@ -5,12 +5,12 @@ Arquivo que lê os boletins e tipos de urna e gera um dataframe.
 @author: kuka
 """
 
-SRC_FOLDER_NAME = "../downloaded_data/bu_imgbu_logjez_rdv_vscmr_2022_2t_BA/"
-DST_FOLDER_NAME = "../generated_data/"
 
 import asn1tools
 import pandas as pd
 import os
+
+from conf import SRC_FOLDER_NAME, DST_FOLDER_NAME, TARGET
 
 # processa um boletim de urna
 def read_bus():
@@ -80,7 +80,7 @@ def add_tipo_urna(df):
     df["tipo_urna"] = "none"
     df.index = df["boletim"]
 
-    with open(DST_FOLDER_NAME+"models.txt", "r") as fp:
+    with open(DST_FOLDER_NAME+ TARGET + "_models.txt", "r") as fp:
         for i, line in enumerate(fp.readlines()):
             urna, tipo = line.split()
             urna = urna.split('.')[0]
@@ -97,7 +97,7 @@ def main():
 
     df = add_tipo_urna(df)
 
-    df.to_csv(DST_FOLDER_NAME + "bus.csv")
+    df.to_csv(DST_FOLDER_NAME + TARGET + "_bus.csv")
 
 if __name__ == "__main__":
     main()

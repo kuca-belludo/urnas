@@ -10,8 +10,7 @@ import py7zr
 import codecs
 import os
 
-SRC_FOLDER_NAME = "../downloaded_data/bu_imgbu_logjez_rdv_vscmr_2022_2t_BA/"
-DST_FOLDER_NAME = "../generated_data/"
+from conf import TARGET, SRC_FOLDER_NAME, DST_FOLDER_NAME
 
 # Para cada log, descompacta, encontra a string "Modelo de Urna" e extrai e retorna o modelo de urna encontrado
 def get_versao_urna(fname):
@@ -55,7 +54,7 @@ def main():
     
     
     # cria um arquivo de saída e coloca os dados lá
-    with open(DST_FOLDER_NAME + 'models.txt', 'w') as fp:
+    with open(DST_FOLDER_NAME + TARGET + '_models.txt', 'w') as fp:
         for item in logrel:
             fp.write("%s, %s\n" % (item[0], item[1]))
         print('Done')    
