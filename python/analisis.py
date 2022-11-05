@@ -4,17 +4,24 @@
 @author: kuka
 """
 
+import os
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+
 plt.close('all')
 
-DST_FOLDER_NAME = "../generated_data/"
-
+SRC_FOLDER_NAME = "../generated_data/"
 
 tipos =  ['UE2009', 'UE2010', 'UE2011', 'UE2013', 'UE2015', 'UE2020']
-states = ["BA", "ES", "MG", "RS", "MS", 'MT']
 TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_%s"
 THRESHOLD = 100e3
+
+files = os.listdir(SRC_FOLDER_NAME)
+states = [x[-10:-8] for x in files if x[-4:] == ".csv"]
+
+# votes per ballot (votos por urna)
+vtpb = {'st':[], 'UE2009':[], 'UE2010':[], 'UE2011':[], 'UE2013':[], 'UE2015':[], 'UE2020':[]}
 
 print(f"\n\n municipios até {THRESHOLD:0,.0f} votos válidos")
 for state in states:
@@ -22,7 +29,7 @@ for state in states:
     print(state)
     print("modelo", '\t', '# urnas', '\t', '% bolso')
     tgt = TARGET % state
-    df = pd.read_csv(DST_FOLDER_NAME + tgt + "_bus.csv")
+    df = pd.read_csv(SRC_FOLDER_NAME + tgt + "_bus.csv")
     df['pbolso'] = 100*df['bolso']/(df['bolso']+df['lula'])
 
     df['municipio'] = df['boletim'].str.slice(7, 12)
@@ -37,28 +44,35 @@ for state in states:
     dff = df.loc[df['municipio'].isin(muns)]
     
     #print(len(dff))
+    vtpb['st'].append(state)
     for tipo in tipos:
         dtip = dff[dff['tipo_urna']==tipo]
         print (tipo, '\t',len(dtip), '\t\t', "%.1f"%dtip['pbolso'].mean())
+        vtpb[tipo].append(dtip['pbolso'].mean())
 
-if 0:        
-    fig, axes = plt.subplots(nrows=1, ncols=2)
-    fig.suptitle(state)
-    dff[dff['tipo_urna']=='UE2010'].plot.scatter('bolso', 'lula', ax=axes[0])
-    dff[dff['tipo_urna']=='UE2020'].plot.scatter('bolso', 'lula', ax=axes[1])
+if 1:
+    
+    # set width of bar
+    barWidth = 0.25
+    fig, ax = plt.subplots(figsize =(12, 8))
+    fig.suptitle(f"municipios até {THRESHOLD:0,.0f} votos válidos")
+     
+    # Set position of bar on X axis
+    br1 = np.arange(len(states))
+    br2 = [x + barWidth for x in br1]
+     
+    # Make the plot
+    plt.bar(br1, vtpb['UE2010'], color ='r', width = barWidth,
+            edgecolor ='grey', label ='UE2010')
+    plt.bar(br2, vtpb['UE2020'], color ='b', width = barWidth,
+            edgecolor ='grey', label ='UE2020')
+     
+    # Adding Xticks
+    plt.xlabel('Estados', fontweight ='bold', fontsize = 15)
+    plt.ylabel('% média vot do bolsonaro por tipo de urna', fontweight ='bold', fontsize = 15)
+    plt.xticks([r + barWidth for r in range(len(states))], states)
+     
+    plt.legend()
 
-
-    bins = list(range(0, 105, 5))
-    dd = dff[dff['tipo_urna']=='UE2010']
-    v0 = dd['pbolso'].value_counts(bins=bins, sort=False)
-    v0 = 100*v0/v0.sum()
-    dd = dff[dff['tipo_urna']=='UE2020']
-    v1 = dd['pbolso'].value_counts(bins=bins, sort=False)
-    v1 = 100*v1/v1.sum()
-
-    fig, axes = plt.subplots(nrows=1, ncols=2)
-    fig.suptitle(state)
-    axes[0].plot(v0.values)
-    axes[0].plot(v1.values)
 
     
