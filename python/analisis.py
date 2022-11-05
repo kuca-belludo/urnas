@@ -47,8 +47,9 @@ for state in states:
     vtpb['st'].append(state)
     for tipo in tipos:
         dtip = dff[dff['tipo_urna']==tipo]
-        print (tipo, '\t',len(dtip), '\t\t', "%.1f"%dtip['pbolso'].mean())
-        vtpb[tipo].append(dtip['pbolso'].mean())
+        med_bolso = 100*dtip['bolso'].sum()/(dtip['bolso'].sum()+dtip['lula'].sum())
+        print (tipo, '\t',len(dtip), '\t\t', "%.1f"%med_bolso)
+        vtpb[tipo].append(med_bolso)
 
 if 1:
     
