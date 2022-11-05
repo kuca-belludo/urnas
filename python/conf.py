@@ -8,6 +8,10 @@ Definições de nomes de arquivo
 TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_BA"
 TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_MG"
 TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_RO"
+TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_RS"
+TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_MS"
+TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_MT"
+TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_SC"
 #TARGET = "bu_imgbu_logjez_rdv_vscmr_2022_2t_ES"
 
 SRC_FOLDER_NAME = "../downloaded_data/" + TARGET + '/'

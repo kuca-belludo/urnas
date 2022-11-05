@@ -10,17 +10,14 @@ import asn1tools
 import pandas as pd
 import os
 
-from conf import SRC_FOLDER_NAME, DST_FOLDER_NAME, TARGET
+from conf import  DST_FOLDER_NAME
 
 # processa um boletim de urna
-def read_bus():
+def read_bus(conv, src_fldr):
+
     print("reading bus")
-
-    # estrutura do boletim (copiado dos scripts do TSE)
-    asn1_paths = "../spec/bu.asn1"
-    conv = asn1tools.compile_files(asn1_paths, codec="ber")
-
-    flist = os.listdir(SRC_FOLDER_NAME)
+    
+    flist = os.listdir(src_fldr)
     boletins = [x for x in flist if ".bu" in x]
 
     # lê cada boletim
@@ -28,7 +25,7 @@ def read_bus():
     for i, boletim in enumerate(boletins):
 
         # lê e decodifica boletim
-        bu_path = SRC_FOLDER_NAME + boletim
+        bu_path = src_fldr + boletim
         with open(bu_path, "rb") as file:
             envelope_encoded = bytearray(file.read())
         envelope_decoded = conv.decode("EntidadeEnvelopeGenerico", envelope_encoded)
@@ -67,20 +64,19 @@ def read_bus():
         bus["branco"].append(branco)
         bus["nulo"].append(nulo)
 
-        if i%1000 == 0:
+        if i%2000 == 0:
             print(i, boletim, bolso, lula, branco, nulo)
-            
 
     # retorna dados em forma de dataframe    
     return pd.DataFrame(bus)
 
-def add_tipo_urna(df):
+def add_tipo_urna(df, models_fname):
 
     print("adicionando tipo")
     df["tipo_urna"] = "none"
     df.index = df["boletim"]
 
-    with open(DST_FOLDER_NAME+ TARGET + "_models.txt", "r") as fp:
+    with open(models_fname, "r") as fp:
         for i, line in enumerate(fp.readlines()):
             urna, tipo = line.split()
             urna = urna.split('.')[0]
@@ -91,13 +87,30 @@ def add_tipo_urna(df):
 
 
 def main():
-    
-    # Lẽ conteúdo das urnas
-    df = read_bus()
 
-    df = add_tipo_urna(df)
 
-    df.to_csv(DST_FOLDER_NAME + TARGET + "_bus.csv")
+    # estrutura do boletim (copiado dos scripts do TSE)
+    asn1_paths = "../spec/bu.asn1"
+    conv = asn1tools.compile_files(asn1_paths, codec="ber")
+
+    SRC = '../generated_data/'
+    content = os.listdir(SRC)
+    txts = [x[:-11] for x in content if x[-11:] == "_models.txt"]
+    csvs = [x[:-8] for x in content if x[-8:] == "_bus.csv"]
+    must_proc = [x for x in txts if x not in csvs]
+
+    for m_proc_fname in must_proc:
+
+        src_fldr = "../downloaded_data/" + m_proc_fname + '/'
+        models_fname = "../generated_data/" + m_proc_fname + '_models.txt'
+        dst_fname = "../generated_data/" + m_proc_fname + "_bus.csv"
+        
+        # Lẽ conteúdo das urnas
+        df = read_bus(conv, src_fldr)
+
+        # adiciona informação do tipo de urna e salva dataframe
+        df = add_tipo_urna(df, models_fname)
+        df.to_csv(dst_fname)
 
 if __name__ == "__main__":
     main()
