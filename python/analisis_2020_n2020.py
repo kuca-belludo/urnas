@@ -21,7 +21,7 @@ files = os.listdir(SRC_FOLDER_NAME)
 states = [x[-10:-8] for x in files if x[-4:] == ".csv"]
 
 # votes per ballot (votos por urna)
-vtpb = {'st':[], 'UE2009':[], 'UE2010':[], 'UE2011':[], 'UE2013':[], 'UE2015':[], 'UE2020':[]}
+vtpb = {'st':[], 'UE2020':[], 'nUE2020':[]}
 
 print(f"\n\n municipios até {THRESHOLD:0,.0f} votos válidos")
 for state in states:
@@ -45,11 +45,18 @@ for state in states:
     
     #print(len(dff))
     vtpb['st'].append(state)
-    for tipo in tipos:
-        dtip = dff[dff['tipo_urna']==tipo]
-        med_bolso = 100*dtip['bolso'].sum()/(dtip['bolso'].sum()+dtip['lula'].sum())
-        print (tipo, '\t',len(dtip), '\t\t', "%.1f"%med_bolso)
-        vtpb[tipo].append(med_bolso)
+    d2020 = dff[dff['tipo_urna']=="UE2020"]
+    med_bolso_2020 = 100*d2020['bolso'].sum()/(d2020['bolso'].sum()+d2020['lula'].sum())
+    print ('UE2020', '\t', len(d2020), '\t\t', "%.1f"%med_bolso_2020)
+
+    dn2020 = dff[dff['tipo_urna']!="UE2020"]
+    med_bolso_n2020 = 100*dn2020['bolso'].sum()/(dn2020['bolso'].sum()+dn2020['lula'].sum())
+    print ('nUE2020', '\t', len(dn2020), '\t\t', "%.1f"%med_bolso_n2020)
+
+    
+    
+    vtpb['UE2020'].append(med_bolso_2020)
+    vtpb['nUE2020'].append(med_bolso_n2020)
 
 if 1:
 
@@ -61,11 +68,10 @@ if 1:
     # Set position of bar on X axis
     br1 = np.arange(len(states))
     br2 = [x + barWidth for x in br1]
-    br3 = [x + barWidth for x in br2]
      
     # Make the plot
-    plt.bar(br1, vtpb['UE2010'], color ='r', width = barWidth,
-            edgecolor ='grey', label ='UE2010')
+    plt.bar(br1, vtpb['nUE2020'], color ='r', width = barWidth,
+            edgecolor ='grey', label ='nao UE2020')
     plt.bar(br2, vtpb['UE2020'], color ='b', width = barWidth,
             edgecolor ='grey', label ='UE2020')
      
