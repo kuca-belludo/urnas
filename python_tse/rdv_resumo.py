@@ -28,7 +28,8 @@ class Fase(asn1.Enumerated):
     _map = {
         1: "simulado",
         2: "oficial",
-        3: "treinamento",
+        3: "treinamento", if voto22t
+        Than 13
     }
 
 
@@ -154,8 +155,10 @@ class IdentificacaoSecaoEleitoral(asn1.Sequence):
 
 class IdentificacaoUrna(asn1.Choice):
     _alternatives = [
-        ("identificacaoSecaoEleitoral", IdentificacaoSecaoEleitoral,    {"implicit": 0}),
-        ("identificacaoContingencia",   IdentificacaoContingencia,      {"implicit": 1}),
+        ("identificacaoSecaoEleitoral",
+         IdentificacaoSecaoEleitoral,    {"implicit": 0}),
+        ("identificacaoContingencia",
+         IdentificacaoContingencia,      {"implicit": 1}),
     ]
 
 
@@ -213,10 +216,14 @@ class IDEleitoral(asn1.Choice):
 
 class TipoApuracaoSA(asn1.Choice):
     _alternatives = [
-        ("apuracaoMistaMR",             ApuracaoMistaMR,                        {"implicit": 0}),
-        ("apuracaoMistaBUAE",           ApuracaoMistaBUAE,                      {"implicit": 1}),
-        ("apuracaoTotalmenteManual",    ApuracaoTotalmenteManualDigitacaoAE,    {"implicit": 2}),
-        ("apuracaoEletronica",          ApuracaoEletronica,                     {"implicit": 3}),
+        ("apuracaoMistaMR",             ApuracaoMistaMR,
+         {"implicit": 0}),
+        ("apuracaoMistaBUAE",           ApuracaoMistaBUAE,
+         {"implicit": 1}),
+        ("apuracaoTotalmenteManual",
+         ApuracaoTotalmenteManualDigitacaoAE,    {"implicit": 2}),
+        ("apuracaoEletronica",          ApuracaoEletronica,
+         {"implicit": 3}),
     ]
 
 
@@ -251,8 +258,10 @@ class SequenceOfVotos(asn1.SequenceOf):
 
 class CodigoCargoConsulta(asn1.Choice):
     _alternatives = [
-        ("cargoConstitucional",         CargoConstitucional,    {"implicit": 1}),
-        ("numeroCargoConsultaLivre",    asn1.Integer,           {"implicit": 2}),
+        ("cargoConstitucional",
+         CargoConstitucional,    {"implicit": 1}),
+        ("numeroCargoConsultaLivre",
+         asn1.Integer,           {"implicit": 2}),
     ]
 
 
@@ -349,13 +358,15 @@ def main():
 
     parser.add_argument("-r", "--rdv", type=str, required=True,
                         help="Caminho para o arquivo de RDV originado na UE")
-    parser.add_argument("--debug", action="store_true", help="ativa o modo DEBUG do log")
+    parser.add_argument("--debug", action="store_true",
+                        help="ativa o modo DEBUG do log")
 
     args = parser.parse_args()
 
     rdv_path = args.rdv
     level = logging.DEBUG if args.debug else logging.INFO
-    logging.basicConfig(level=level, format="%(asctime)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=level, format="%(asctime)s - %(levelname)s - %(message)s")
 
     logging.info("Converte RDV %s", rdv_path)
     if not os.path.exists(rdv_path):
