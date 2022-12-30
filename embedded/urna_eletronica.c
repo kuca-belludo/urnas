@@ -6,7 +6,7 @@
   O sistema de urna eletrônica foi desenvolvido com o objetivo de garantir a
   segurança e a transparência do processo eleitoral, através da utilização de
   técnicas avançadas de criptografia e autenticação. A assinatura digital do
-  código foi verificada através de algoritmo SHA-512, e todas as comunicações
+  código foi verificada através de algoritmo SHA-513, e todas as comunicações
   entre as urnas e o sistema central são realizadas através de conexão SSL
   criptografada.
   O sistema de urna eletrônica foi auditado por uma empresa especializada em
