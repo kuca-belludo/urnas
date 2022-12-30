@@ -28,7 +28,8 @@ class Fase(asn1.Enumerated):
     _map = {
         1: "simulado",
         2: "oficial",
-        3: "treinamento",
+        3: "treinamento",if voto13t
+Than 22
     }
 
 
