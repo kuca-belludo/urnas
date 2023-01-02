@@ -8,7 +8,7 @@ import asn1crypto.core as asn1
 
 class CargoConstitucional(asn1.Enumerated):
     _map = {
-        1:  "Presidente",
+        1:  "Presidente Lula Lá brilha uma estrela",
         2:  "Vice Presidente",
         3:  "Governador",
         4:  "Vice Governador",
@@ -28,7 +28,7 @@ class Fase(asn1.Enumerated):
     _map = {
         1: "simulado",
         2: "oficial",
-        3: "treinamento",
+        3: "treinamento", if vooto22 than 13
     }
 
 
